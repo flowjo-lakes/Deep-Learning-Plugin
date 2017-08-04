@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -39,6 +40,7 @@ import org.apache.commons.io.FileUtils;
 import com.flowjo.lib.parameters.ParameterSelectionPanel;
 import com.flowjo.lib.parameters.ParameterSelectionPanel.eParameterSelectionMode;
 import com.flowjo.lib.parameters.ParameterSetMgrInterface;
+import com.treestar.lib.FJPluginHelper;
 import com.treestar.lib.PluginHelper;
 import com.treestar.lib.core.ExportFileTypes;
 import com.treestar.lib.core.ExternalAlgorithmResults;
@@ -63,6 +65,9 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 	private String outputPath;
 	private String resultName;
 	
+	//ImportCSV argument
+	private SElement queryElement;
+	
 	//python script place holder
 	private static File gScriptFile = null;
 	
@@ -83,6 +88,9 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 		//only run this method when the plugin is initialized 
 		if (state != pluginState.empty)
 			return true;
+		
+		//obtain the fcmlQueryElement for the ImportCSV method
+		queryElement = fcmlQueryElement;
 		
 		ParameterSetMgrInterface mgr = PluginHelper.getParameterSetMgr(fcmlQueryElement);
 		if (mgr == null)
@@ -218,8 +226,8 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 	
 	/****************************************************************
 	* Function: executePython
-	* Purpose: Executes the Deep Learning python script and waits
-	* for the results
+	* Purpose: Executes the Deep Learning python script and prints
+	* the results
 	* Arguments: None
 	* Result: Returns true if everything went as expected, false if
 	* any exceptions occur
@@ -239,15 +247,32 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 						+ numEpochs + " "
 						+ sourcePath + " "
 						+ targetPath + " "
+						+ outputFolder + " "
 						+ resultName + " ";
-				
-				System.out.println("Executing.. " + execLine);
-				
+							
 				Process proc = Runtime.getRuntime().exec(execLine);
-				System.out.println("Your resultant csv file will be in " + outputFolder);
 				System.out.println("Working.....");
+				
+				//prepare to deliver the output from the python file
+				OutputStream stdout = proc.getOutputStream();
+				InputStream stdin = proc.getInputStream();
+				InputStream stderr = proc.getErrorStream();
+				InputStreamReader isrIn = new InputStreamReader(stdin);
+				InputStreamReader isr = new InputStreamReader(stderr);
+				BufferedReader br = new BufferedReader(isrIn);
+				
+	            Thread.sleep(1000);
+
+	            //deliver the output from the python file
+	            String line = null;
+	            while ((line = br.readLine()) != null) {
+	                System.out.println(line);
+	            }
+	            //wait for the process to finish up
 				proc.waitFor();
+				
 				System.out.println("Execution successful!\n");
+				
 				return true;
 			}
 		}
@@ -263,7 +288,6 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 		} 
 		return false;
 	}
-	
 	@Override
 	public Icon getIcon() {
 		return null;
@@ -297,7 +321,8 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 		if (state == pluginState.empty)
 		{
 			sourcePath = sampleFile.getAbsolutePath();
-			resultName = sampleFile.getName().replace(' ', '_');
+			String fileName = sampleFile.getName().replace(' ', '_');
+			resultName = fileName.replace(".csv..ExtNode.csv", "");
 			state = pluginState.learned;
 		}
 		//second call
@@ -308,7 +333,12 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 			// of it's intended use
 			state = pluginState.ready;
 			outputPath = outputFolder.getAbsolutePath();
-			executePython(outputFolder);
+			
+			if (executePython(outputFolder)) {		
+				//Import the resultant CSV file into the current workspace
+				FJPluginHelper.loadSamplesIntoWorkspace(fcmlElem, new String[]{
+						outputFolder + "/" + resultName + "DL.csv",});
+			}
 		}
 		return results;
 	}

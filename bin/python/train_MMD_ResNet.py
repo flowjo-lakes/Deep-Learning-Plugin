@@ -94,8 +94,10 @@ def formatCSV( path ):
 numEpochs = int(sys.argv[1])
 targetPath = formatCSV( sys.argv[3] )
 sourcePath = formatCSV( sys.argv[2] )
-resultName = sys.argv[4]
+outputFolder = sys.argv[4]
+resultName = sys.argv[5]
 resultPath = sourcePath + "/../_" + resultName + "_" + str(numEpochs) + "_Epochs.csv"
+realResultPath = outputFolder + "/" + resultName + "DL.csv"
 
 # AE confiduration
 ae_encodingDim = 25
@@ -112,7 +114,6 @@ l2_penalty = 1e-2
 #######################
 ###### read data ######
 #######################
-# we load two CyTOF samples 
 
 #might have to worry about using headers in csv files
 source = genfromtxt(sourcePath, delimiter=',', skip_header=0)
@@ -220,7 +221,7 @@ calibMMDNet.fit(source,sourceLabels,nb_epoch=numEpochs,batch_size=1000,validatio
 calibratedSource = calibMMDNet.predict(source)
 #np.savetxt(resultPath, calibratedSource, delimiter=",")
 
-##################################### qualitative evaluation: PCA #####################################
+#################################### qualitative evaluation: PCA #####################################
 pca = decomposition.PCA()
 pca.fit(target)
 
@@ -237,7 +238,7 @@ axis2 = 'PC'+str(pc2)
 sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2)
 sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_after[:,pc1], projection_after[:,pc2], axis1, axis2)
 
-#use the following code block if we want to save weights from training sessions
+#use the following code block if we want to save weight files from training sessions
 #if denoise:
     #autoencoder.save(os.path.join(io.DeepLearningRoot(), "savedModels/person1_baseline_DAEL.h5"))
 
@@ -264,6 +265,13 @@ with open(resultantFile, 'w') as f:
     for list in rowIdentifiers:
         wr.writerow(list + next(reader))
 
+with open(resultantFile, 'r') as infile, open(realResultPath, 'w') as outfile:
+        data = infile.read()
+        data = data.replace("e+00", "")
+        data = data.replace("+", "")
+        outfile.write(data)
+
 #clean up extraneous file
 os.remove(sourcePath)
+os.remove(resultantFile)
 
