@@ -97,7 +97,7 @@ sourcePath = formatCSV( sys.argv[2] )
 outputFolder = sys.argv[4]
 resultName = sys.argv[5]
 resultPath = sourcePath + "/../_" + resultName + "_" + str(numEpochs) + "_Epochs.csv"
-realResultPath = outputFolder + "/" + resultName + "DL.csv"
+realResultPath = outputFolder + "/" + resultName + "_" + str(numEpochs) + "E_" + "DL.csv"
 
 # AE confiduration
 ae_encodingDim = 25

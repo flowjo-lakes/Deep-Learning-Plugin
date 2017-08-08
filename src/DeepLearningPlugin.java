@@ -242,14 +242,13 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 			if (myPythonFile != null)
 			{
 				String execLine =   
-						"python" + " "
-						 + myPythonFile.getAbsolutePath() + " "
-						+ numEpochs + " "
-						+ sourcePath + " "
-						+ targetPath + " "
-						+ outputFolder + " "
-						+ resultName + " ";
-							
+					"python" + " "
+					+ myPythonFile.getAbsolutePath() + " "
+					+ numEpochs + " "
+					+ sourcePath + " "
+					+ targetPath + " "
+					+ outputFolder + " "
+					+ resultName + " ";			
 				Process proc = Runtime.getRuntime().exec(execLine);
 				System.out.println("Working.....");
 				
@@ -337,7 +336,7 @@ public class DeepLearningPlugin implements PopulationPluginInterface {
 			if (executePython(outputFolder)) {		
 				//Import the resultant CSV file into the current workspace
 				FJPluginHelper.loadSamplesIntoWorkspace(fcmlElem, new String[]{
-						outputFolder + "/" + resultName + "DL.csv",});
+						outputFolder + "/" + resultName + "_" + numEpochs + "E_" + "DL.csv",});
 			}
 		}
 		return results;
